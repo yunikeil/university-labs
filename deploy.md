@@ -93,6 +93,6 @@ jobs:
 
 Репозиторий: https://github.com/yunikeil/java-02-MEPHI
 
-Сайт куда деплоится отчёт автотестов: https://yunikeil.ru/java-02-MEPHI/
+Сайт куда деплоится отчёт автотестов: https://yunikeil.github.io/java-02-MEPHI/
 
-Статус деплоя + ссылка: [![Deploy coverage](https://github.com/yunikeil/java-02-MEPHI/actions/workflows/coverage-pages.yaml/badge.svg)](https://github.com/yunikeil/java-02-MEPHI/actions/workflows/coverage-pages.yaml) [![Coverage report link](https://img.shields.io/badge/coverage-report-blue)](https://yunikeil.ru/java-02-MEPHI/) 
+Статус деплоя + ссылка: [![Deploy coverage](https://github.com/yunikeil/java-02-MEPHI/actions/workflows/coverage-pages.yaml/badge.svg)](https://github.com/yunikeil/java-02-MEPHI/actions/workflows/coverage-pages.yaml) [![Coverage report link](https://img.shields.io/badge/coverage-report-blue)](https://yunikeil.github.io/java-02-MEPHI/) 
