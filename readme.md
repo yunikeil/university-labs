@@ -1,5 +1,5 @@
 
-report: https://yunikeil.ru/cdx_homework/
+report: https://yunikeil.github.io/cdx_homework/
 
 ## Установка зависимостей
 
@@ -65,7 +65,7 @@ curl -X POST "http://localhost:8081/api/v1/bom" \
 {"token":"0cad9ea3-ba0d-486f-8c31-7e2787f73878"}
 ```
 
-Результат: https://yunikeil.ru/cdx_homework/reports/dependency-track/report.html
+Результат: https://yunikeil.github.io/cdx_homework/reports/dependency-track/report.html
 
 ![Отображение пакетов](assets/image.png)
 Отображение пакетов
