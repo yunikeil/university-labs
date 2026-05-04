@@ -1,0 +1,32 @@
+server:
+  port: 8080
+spring:
+  datasource:
+    url: jdbc:postgresql://postgres:5432/otpdb
+    username: otp
+    password: otp
+  sql:
+    init:
+      mode: always
+  mail:
+    host: ${MAIL_HOST:mailhog}
+    port: ${MAIL_PORT:1025}
+    username: ${MAIL_USER:}
+    password: ${MAIL_PASSWORD:}
+jwt:
+  secret: ${JWT_SECRET:very-secret-key}
+  expiration-seconds: 3600
+otp:
+  file-path: ./otp_codes.log
+  smpp-url: ${SMPP_EMULATOR_URL:http://smpp-emulator:8080/sms}
+  telegram-bot-token: ${TELEGRAM_BOT_TOKEN:}
+logging:
+  level:
+    root: INFO
+    com.promoit.otp: DEBUG
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html

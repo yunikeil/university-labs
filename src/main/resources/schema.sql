@@ -1,0 +1,31 @@
+CREATE TABLE IF NOT EXISTS users (
+  id BIGSERIAL PRIMARY KEY,
+  username VARCHAR(100) UNIQUE NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  role VARCHAR(20) NOT NULL CHECK (role IN ('ADMIN','USER')),
+  email VARCHAR(255),
+  phone VARCHAR(50),
+  telegram_chat_id VARCHAR(100)
+);
+
+CREATE TABLE IF NOT EXISTS otp_config (
+  id SMALLINT PRIMARY KEY DEFAULT 1,
+  code_length INT NOT NULL,
+  ttl_seconds INT NOT NULL,
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  CHECK (id = 1)
+);
+
+INSERT INTO otp_config(id, code_length, ttl_seconds)
+VALUES (1, 6, 300)
+ON CONFLICT (id) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS otp_codes (
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  operation_id VARCHAR(100) NOT NULL,
+  code VARCHAR(20) NOT NULL,
+  status VARCHAR(20) NOT NULL CHECK (status IN ('ACTIVE', 'EXPIRED', 'USED')),
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  expires_at TIMESTAMP NOT NULL
+);
