@@ -1,0 +1,206 @@
+services:
+  dns:
+    build: .
+    command:
+      - python
+      - scripts/dev_reload.py
+      - --
+      - python
+      - -m
+      - dns_filter.dns_server
+      - --host
+      - 0.0.0.0
+      - --port
+      - "5353"
+      - --blocked-ipv4
+      - ${BLOCKED_IPV4:-127.0.0.1}
+      - --upstream-host
+      - ${UPSTREAM_DNS:-8.8.8.8}
+      - --direct-suffixes
+      - ${DIRECT_SUFFIXES:-ru}
+      - --knock-host
+      - ${REDIRECT_KNOCK_HOST:-${BLOCKED_IPV4:-127.0.0.1}}
+      - --knock-port
+      - ${REDIRECT_KNOCK_PORT:-9091}
+      - --knock-secret
+      - ${REDIRECT_AUTH_SECRET:-dev-secret-change-me}
+      - --knock-ttl
+      - ${REDIRECT_KNOCK_TTL:-60}
+      - --log-queries
+    volumes:
+      - .:/app
+    ports:
+      - "5353:5353/udp"
+    networks:
+      dns_filter_net:
+        ipv4_address: 172.28.0.2
+    restart: unless-stopped
+
+  dns_proxy:
+    build: .
+    command:
+      - python
+      - scripts/dev_reload.py
+      - --
+      - python
+      - -m
+      - dns_filter.proxy
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8080"
+      - --dns-host
+      - ${BROWSER_PROXY_DNS:-dns}
+      - --dns-port
+      - ${BROWSER_PROXY_DNS_PORT:-5353}
+      - --redirect-ip
+      - ${BLOCKED_IPV4:-127.0.0.1}
+      - --redirect-host
+      - ${BROWSER_PROXY_REDIRECT_HOST:-redirect_proxy}
+      - --tunnel-host
+      - ${BROWSER_PROXY_TUNNEL_HOST:-}
+      - --tunnel-port
+      - ${REDIRECT_PAIR_PORT:-9443}
+      - --tunnel-secret
+      - ${REDIRECT_PAIR_SECRET:-${REDIRECT_AUTH_SECRET:-dev-secret-change-me}}
+      - --log-connections
+    volumes:
+      - .:/app
+    ports:
+      - "8080:8080"
+    depends_on:
+      - dns
+    networks:
+      dns_filter_net:
+        ipv4_address: 172.28.0.3
+    restart: "no"
+
+  redirect_proxy:
+    profiles:
+      - local
+    build: .
+    command:
+      - python
+      - scripts/dev_reload.py
+      - --
+      - python
+      - -m
+      - dns_filter.redirect_proxy
+      - --host
+      - 0.0.0.0
+      - --http-port
+      - "80"
+      - --https-port
+      - "443"
+      - --upstream-dns-host
+      - ${REDIRECT_PROXY_UPSTREAM_DNS:-8.8.8.8}
+      - --auth-secret
+      - ${REDIRECT_AUTH_SECRET:-dev-secret-change-me}
+      - --knock-port
+      - ${REDIRECT_KNOCK_PORT:-9091}
+      - --pair-port
+      - ${REDIRECT_PAIR_PORT:-9443}
+      - --pair-secret
+      - ${REDIRECT_PAIR_SECRET:-${REDIRECT_AUTH_SECRET:-dev-secret-change-me}}
+      - --log-connections
+      - --log-knocks
+    volumes:
+      - .:/app
+    ports:
+      - "80:80"
+      - "443:443"
+      - "9443:9443"
+      - "9091:9091/udp"
+    networks:
+      dns_filter_net:
+        ipv4_address: 172.28.0.20
+    restart: unless-stopped
+
+  block_page:
+    profiles:
+      - local
+    build: .
+    command:
+      - python
+      - scripts/dev_reload.py
+      - --
+      - python
+      - -m
+      - dns_filter.block_page
+      - --host
+      - 0.0.0.0
+      - --port
+      - "80"
+    volumes:
+      - .:/app
+    ports:
+      - "8081:80"
+    networks:
+      dns_filter_net:
+        ipv4_address: 172.28.0.10
+    restart: unless-stopped
+
+  remote_redirect_deployer:
+    profiles:
+      - remote
+    build: .
+    command:
+      - python
+      - scripts/deploy_redirect_proxy.py
+      - --watch
+      - --watch-root
+      - /app
+      - --host
+      - ${REMOTE_REDIRECT_HOST:-127.0.0.1}
+      - --user
+      - ${REMOTE_REDIRECT_USER:-root}
+      - --port
+      - ${REMOTE_REDIRECT_SSH_PORT:-22}
+      - --key
+      - ${REMOTE_REDIRECT_KEY:-/root/.ssh/id_rsa}
+      - --upstream-dns-host
+      - ${REDIRECT_PROXY_UPSTREAM_DNS:-8.8.8.8}
+      - --auth-secret
+      - ${REDIRECT_AUTH_SECRET:-dev-secret-change-me}
+      - --knock-port
+      - ${REDIRECT_KNOCK_PORT:-9091}
+      - --pair-port
+      - ${REDIRECT_PAIR_PORT:-9443}
+      - --pair-secret
+      - ${REDIRECT_PAIR_SECRET:-${REDIRECT_AUTH_SECRET:-dev-secret-change-me}}
+      - --log-connections
+      - --log-knocks
+    volumes:
+      - .:/app
+      - ${REMOTE_REDIRECT_SSH_DIR:-~/.ssh}:/root/.ssh:ro
+    restart: unless-stopped
+
+  remote_redirect_logs:
+    profiles:
+      - remote
+    build: .
+    command:
+      - python
+      - scripts/tail_remote_service_logs.py
+      - --host
+      - ${REMOTE_REDIRECT_HOST:-127.0.0.1}
+      - --user
+      - ${REMOTE_REDIRECT_USER:-root}
+      - --port
+      - ${REMOTE_REDIRECT_SSH_PORT:-22}
+      - --key
+      - ${REMOTE_REDIRECT_KEY:-/root/.ssh/id_rsa}
+      - --service
+      - dns-filter-redirect-proxy.service
+      - --lines
+      - "100"
+    volumes:
+      - .:/app
+      - ${REMOTE_REDIRECT_SSH_DIR:-~/.ssh}:/root/.ssh:ro
+    restart: unless-stopped
+
+networks:
+  dns_filter_net:
+    ipam:
+      config:
+        - subnet: 172.28.0.0/24
