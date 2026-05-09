@@ -24,6 +24,7 @@ def run_compose(args: argparse.Namespace) -> int:
     if args.local:
         command.extend(["--profile", "local"])
         env.setdefault("BLOCKED_IPV4", "127.0.0.1")
+        env.setdefault("REDIRECT_AUTH_SECRET", "dev-secret-change-me")
         env.setdefault("REDIRECT_KNOCK_HOST", "redirect_proxy")
         env.setdefault("BROWSER_PROXY_TUNNEL_HOST", "redirect_proxy")
     else:
@@ -32,6 +33,7 @@ def run_compose(args: argparse.Namespace) -> int:
         env["REMOTE_REDIRECT_USER"] = user
         env["REMOTE_REDIRECT_HOST"] = host
         env["BLOCKED_IPV4"] = host
+        env.setdefault("REDIRECT_AUTH_SECRET", "dev-secret-change-me")
         env["REDIRECT_KNOCK_HOST"] = host
         env["BROWSER_PROXY_REDIRECT_HOST"] = host
         env.setdefault("BROWSER_PROXY_TUNNEL_HOST", host)

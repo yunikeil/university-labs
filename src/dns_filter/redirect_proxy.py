@@ -819,6 +819,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--log-connections", action="store_true", help="Print every redirected TCP connection.")
     parser.add_argument("--log-knocks", action="store_true", help="Print every accepted DNS knock.")
     parser.add_argument(
+        "--provider-block-detect",
+        choices=("on", "off"),
+        default="on",
+        help="Enable or disable provider-block detection hints.",
+    )
+    parser.add_argument(
         "--no-provider-block-detect",
         dest="detect_provider_blocks",
         action="store_false",
@@ -846,6 +852,7 @@ def parse_port_list(value: str) -> tuple[int, ...]:
 
 def main() -> None:
     args = parse_args()
+    detect_provider_blocks = args.detect_provider_blocks and args.provider_block_detect == "on"
     allowed_clients = AllowedClients()
     config = RedirectProxyConfig(
         upstream_dns_host=args.upstream_dns_host,
@@ -856,7 +863,7 @@ def main() -> None:
         allowed_clients=allowed_clients,
         dns_cache=DnsCache(args.dns_cache_ttl),
         log_connections=args.log_connections,
-        detect_provider_blocks=args.detect_provider_blocks,
+        detect_provider_blocks=detect_provider_blocks,
     )
     threads = [
         threading.Thread(target=serve_port, args=(args.host, args.http_port, "http", config)),

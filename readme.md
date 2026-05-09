@@ -32,6 +32,23 @@ Port: 8080
 Use this proxy for HTTPS: enabled
 ```
 
+### Local DNS + redirect proxy only
+
+
+```
+BLOCKED_IPV4=192.168.1.10 \
+DIRECT_SUFFIXES= \
+REDIRECT_SUFFIXES=ru \
+REDIRECT_AUTH_SECRET= \
+REDIRECT_PAIR_SECRET= \
+REDIRECT_PROVIDER_BLOCK_DETECT=off \
+DNS_PORT_MAPPING=192.168.1.10:53:5353/udp \
+REDIRECT_HTTP_PORT_MAPPING=192.168.1.10:80:80 \
+REDIRECT_HTTPS_PORT_MAPPING=192.168.1.10:443:443 \
+docker compose -f docker-compose.yaml --profile local up --build dns redirect_proxy
+```
+
+
 ## Remote Redirect Proxy
 
 Запуск с `redirect_proxy` на удалённом сервере:

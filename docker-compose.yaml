@@ -17,20 +17,22 @@ services:
       - --upstream-host
       - ${UPSTREAM_DNS:-8.8.8.8}
       - --direct-suffixes
-      - ${DIRECT_SUFFIXES:-ru}
+      - ${DIRECT_SUFFIXES-ru}
+      - --redirect-suffixes
+      - ${REDIRECT_SUFFIXES-}
       - --knock-host
       - ${REDIRECT_KNOCK_HOST:-${BLOCKED_IPV4:-127.0.0.1}}
       - --knock-port
       - ${REDIRECT_KNOCK_PORT:-9091}
       - --knock-secret
-      - ${REDIRECT_AUTH_SECRET:-dev-secret-change-me}
+      - ${REDIRECT_AUTH_SECRET-}
       - --knock-ttl
       - ${REDIRECT_KNOCK_TTL:-60}
       - --log-queries
     volumes:
       - .:/app
     ports:
-      - "5353:5353/udp"
+      - "${DNS_PORT_MAPPING:-5353:5353/udp}"
     networks:
       dns_filter_net:
         ipv4_address: 172.28.0.2
@@ -95,22 +97,22 @@ services:
       - --upstream-dns-host
       - ${REDIRECT_PROXY_UPSTREAM_DNS:-8.8.8.8}
       - --auth-secret
-      - ${REDIRECT_AUTH_SECRET:-dev-secret-change-me}
+      - ${REDIRECT_AUTH_SECRET-}
       - --knock-port
       - ${REDIRECT_KNOCK_PORT:-9091}
       - --pair-port
       - ${REDIRECT_PAIR_PORT:-9443}
       - --pair-secret
-      - ${REDIRECT_PAIR_SECRET:-${REDIRECT_AUTH_SECRET:-dev-secret-change-me}}
+      - ${REDIRECT_PAIR_SECRET-${REDIRECT_AUTH_SECRET-}}
+      - --provider-block-detect
+      - ${REDIRECT_PROVIDER_BLOCK_DETECT:-on}
       - --log-connections
       - --log-knocks
     volumes:
       - .:/app
     ports:
-      - "80:80"
-      - "443:443"
-      - "9443:9443"
-      - "9091:9091/udp"
+      - "${REDIRECT_HTTP_PORT_MAPPING:-80:80}"
+      - "${REDIRECT_HTTPS_PORT_MAPPING:-443:443}"
     networks:
       dns_filter_net:
         ipv4_address: 172.28.0.20
@@ -161,13 +163,13 @@ services:
       - --upstream-dns-host
       - ${REDIRECT_PROXY_UPSTREAM_DNS:-8.8.8.8}
       - --auth-secret
-      - ${REDIRECT_AUTH_SECRET:-dev-secret-change-me}
+      - ${REDIRECT_AUTH_SECRET-}
       - --knock-port
       - ${REDIRECT_KNOCK_PORT:-9091}
       - --pair-port
       - ${REDIRECT_PAIR_PORT:-9443}
       - --pair-secret
-      - ${REDIRECT_PAIR_SECRET:-${REDIRECT_AUTH_SECRET:-dev-secret-change-me}}
+      - ${REDIRECT_PAIR_SECRET-${REDIRECT_AUTH_SECRET-}}
       - --log-connections
       - --log-knocks
     volumes:

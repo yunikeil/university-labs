@@ -97,16 +97,21 @@ def is_blocked(domain: str, blocked_domains: set[str]) -> bool:
     return False
 
 
-def is_allowed_direct(domain: str, direct_suffixes: tuple[str, ...]) -> bool:
-    """Проверяет, должен ли домен открываться напрямую."""
+def matches_suffix(domain: str, suffixes: tuple[str, ...]) -> bool:
+    """Проверяет домен и его поддомены по списку suffix-фильтров."""
     domain = domain.lower().rstrip(".")
 
-    for suffix in direct_suffixes:
+    for suffix in suffixes:
         suffix = suffix.lower().lstrip(".")
         if domain == suffix or domain.endswith(f".{suffix}"):
             return True
 
     return False
+
+
+def is_allowed_direct(domain: str, direct_suffixes: tuple[str, ...]) -> bool:
+    """Проверяет, должен ли домен открываться напрямую."""
+    return matches_suffix(domain, direct_suffixes)
 
 
 def parse_question(packet: bytes) -> DnsQuestion:
@@ -218,6 +223,7 @@ def handle_packet(
     blocked_ipv4: str,
     blocked_ipv6: str,
     direct_suffixes: tuple[str, ...],
+    redirect_suffixes: tuple[str, ...],
     knock_sender: KnockSender,
     log_queries: bool,
 ) -> bytes:
@@ -233,7 +239,13 @@ def handle_packet(
         knock_sender.send(client_address[0], question.name)
         return build_blocked_response(packet, question, blocked_ipv4, blocked_ipv6)
 
-    if not is_allowed_direct(question.name, direct_suffixes):
+    if matches_suffix(question.name, redirect_suffixes):
+        if log_queries:
+            print(f"Redirect suffix match {question.name}; returning {blocked_ipv4}")
+        knock_sender.send(client_address[0], question.name)
+        return build_blocked_response(packet, question, blocked_ipv4, blocked_ipv6)
+
+    if direct_suffixes and not is_allowed_direct(question.name, direct_suffixes):
         if log_queries:
             print(f"Non-direct domain {question.name}; returning {blocked_ipv4}")
         knock_sender.send(client_address[0], question.name)
@@ -250,6 +262,7 @@ def serve_forever(
     blocked_ipv4: str,
     blocked_ipv6: str,
     direct_suffixes: tuple[str, ...],
+    redirect_suffixes: tuple[str, ...],
     knock_sender: KnockSender,
     log_queries: bool,
 ) -> None:
@@ -260,7 +273,8 @@ def serve_forever(
         print(f"DNS blocker listening on {listen_address[0]}:{listen_address[1]}")
         print(f"Loaded blocked domains: {len(blocked_domains)}")
         print(f"Blocked A records will point to {blocked_ipv4}")
-        print(f"Direct suffixes: {', '.join(direct_suffixes)}")
+        print(f"Direct suffixes: {', '.join(direct_suffixes) if direct_suffixes else '-'}")
+        print(f"Redirect suffixes: {', '.join(redirect_suffixes) if redirect_suffixes else '-'}")
         print(f"Forwarding allowed requests to {upstream_address[0]}:{upstream_address[1]}")
         if knock_sender.enabled() and knock_sender.address:
             print(f"Sending UDP knocks to {knock_sender.address[0]}:{knock_sender.address[1]}")
@@ -276,6 +290,7 @@ def serve_forever(
                 blocked_ipv4,
                 blocked_ipv6,
                 direct_suffixes,
+                redirect_suffixes,
                 knock_sender,
                 log_queries,
             )
@@ -295,7 +310,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--direct-suffixes",
         default="ru",
-        help="Comma-separated domain suffixes opened directly.",
+        help="Comma-separated domain suffixes opened directly. Empty value disables catch-all redirect mode.",
+    )
+    parser.add_argument(
+        "--redirect-suffixes",
+        default="",
+        help="Comma-separated domain suffixes redirected to --blocked-ipv4.",
     )
     parser.add_argument("--knock-host", default=None, help="Redirect proxy UDP knock host.")
     parser.add_argument("--knock-port", default=9091, type=int, help="Redirect proxy UDP knock port.")
@@ -314,6 +334,7 @@ def main() -> None:
     listen_address = (args.host, args.port)
     upstream_address = (args.upstream_host, args.upstream_port)
     direct_suffixes = tuple(suffix.strip().lstrip(".") for suffix in args.direct_suffixes.split(",") if suffix.strip())
+    redirect_suffixes = tuple(suffix.strip().lstrip(".") for suffix in args.redirect_suffixes.split(",") if suffix.strip())
     knock_address = (args.knock_host, args.knock_port) if args.knock_host else None
     knock_sender = KnockSender(knock_address, args.knock_secret, args.knock_ttl, args.knock_min_interval)
 
@@ -325,6 +346,7 @@ def main() -> None:
         blocked_ipv4=args.blocked_ipv4,
         blocked_ipv6=args.blocked_ipv6,
         direct_suffixes=direct_suffixes,
+        redirect_suffixes=redirect_suffixes,
         knock_sender=knock_sender,
         log_queries=args.log_queries,
     )
