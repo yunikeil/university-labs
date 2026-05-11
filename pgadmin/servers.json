@@ -1,0 +1,16 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "bd_prac_postgres",
+      "Group": "Servers",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "bd_prac",
+      "Username": "student",
+      "Password": "student",
+      "SSLMode": "prefer",
+      "PassFile": "/tmp/pgpass",
+      "SavePassword": true
+    }
+  }
+}

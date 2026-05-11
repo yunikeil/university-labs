@@ -1,0 +1,59 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: bd_prac_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: bd_prac
+      POSTGRES_USER: student
+      POSTGRES_PASSWORD: student
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./sql/01_init.sql:/docker-entrypoint-initdb.d/01_init.sql:ro
+      - ./sql:/sql:ro
+
+  pgadmin:
+    image: dpage/pgadmin4:8
+    container_name: bd_prac_pgadmin
+    restart: unless-stopped
+    entrypoint:
+      - /bin/sh
+      - -c
+      - cp /pgpass-template /tmp/pgpass && chmod 600 /tmp/pgpass && exec /entrypoint.sh
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./pgadmin/servers.json:/pgadmin4/servers.json:ro
+      - ./pgadmin/pgpass:/pgpass-template:ro
+
+  query-runner:
+    build:
+      context: .
+      dockerfile: scripts/Dockerfile
+    profiles:
+      - tools
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: bd_prac
+      DB_USER: student
+      DB_PASSWORD: student
+    depends_on:
+      - postgres
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./sql:/app/sql:ro
+      - ./scripts:/app/scripts:ro
+
+volumes:
+  postgres_data:
+  pgadmin_data:
