@@ -1,0 +1,13 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "otp-postgres",
+      "Group": "Servers",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "otpdb",
+      "Username": "otp",
+      "SSLMode": "prefer"
+    }
+  }
+}

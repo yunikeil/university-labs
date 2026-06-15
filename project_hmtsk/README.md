@@ -745,7 +745,7 @@ HTTP Controller
 
 ## Предлагаемая схема наблюдаемости
 
-Простейший пример можно посмотреть [в одном из проектов](https://github.com/yunikeil/java_analytics) по другому предмету.
+Простейший пример можно посмотреть [в одном из проектов](https://github.com/yunikeil/university-labs/tree/main/java_analytics) по другому предмету.
 
 ```mermaid
 flowchart LR

@@ -1,0 +1,86 @@
+name: University project pages
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'cdx_homework/**'
+      - 'front_final_prac/**'
+      - 'java-02-MEPHI/**'
+      - 'OOP_MEPHI/**'
+      - '.github/workflows/university-pages.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: university-pages
+  cancel-in-progress: false
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        project: [java-02-MEPHI, OOP_MEPHI]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+      - name: Build test coverage
+        working-directory: ${{ matrix.project }}
+        run: bash ./gradlew clean test jacocoTestReport --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.project }}
+          path: ${{ matrix.project }}/build/reports/jacoco/test/html/
+          if-no-files-found: error
+  site:
+    needs: coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: coverage-java-02-MEPHI
+          path: ${{ runner.temp }}/site/java-02-MEPHI
+      - uses: actions/download-artifact@v4
+        with:
+          name: coverage-OOP_MEPHI
+          path: ${{ runner.temp }}/site/OOP_MEPHI
+      - name: Collect the four sites
+        run: |
+          set -euo pipefail
+          site="$RUNNER_TEMP/site"
+          mkdir -p "$site/cdx_homework" "$site/front_final_prac"
+          cp -R cdx_homework/index.html cdx_homework/reports "$site/cdx_homework/"
+          cp -R front_final_prac/{index.html,article.html,assets,styles,scripts} "$site/front_final_prac/"
+          cat > "$site/index.html" <<'HTML'
+          <!doctype html>
+          <html lang="en"><meta charset="utf-8"><title>University labs</title>
+          <h1>University labs</h1><ul>
+            <li><a href="./cdx_homework/">Software dependency reports</a></li>
+            <li><a href="./front_final_prac/">YouTalk blog</a></li>
+            <li><a href="./java-02-MEPHI/">URL shortener test coverage</a></li>
+            <li><a href="./OOP_MEPHI/">Personal finance test coverage</a></li>
+          </ul></html>
+          HTML
+          for project in cdx_homework front_final_prac java-02-MEPHI OOP_MEPHI; do
+            test -s "$site/$project/index.html"
+          done
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: ${{ runner.temp }}/site
+  deploy:
+    needs: site
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.publish.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@v4
+        id: publish

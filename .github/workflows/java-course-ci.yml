@@ -1,0 +1,32 @@
+name: Java coursework CI
+on:
+  push:
+    branches: [main]
+    paths: ['java-02-MEPHI/**', 'OOP_MEPHI/**', '.github/workflows/java-course-ci.yml']
+  pull_request:
+    branches: [main]
+    paths: ['java-02-MEPHI/**', 'OOP_MEPHI/**', '.github/workflows/java-course-ci.yml']
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        project: [java-02-MEPHI, OOP_MEPHI]
+    defaults:
+      run:
+        working-directory: ${{ matrix.project }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+      - run: bash ./gradlew clean test --no-daemon
+      - run: bash ./gradlew checkstyleMain checkstyleTest --no-daemon
+        continue-on-error: true
+      - run: bash ./gradlew spotlessCheck --no-daemon
+        continue-on-error: true
+      - run: bash ./gradlew jacocoTestReport --no-daemon
