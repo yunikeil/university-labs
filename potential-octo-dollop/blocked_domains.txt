@@ -1,0 +1,5 @@
+# One domain per line. Subdomains are matched automatically.
+# Example:
+# example.com
+2ip.ru
+

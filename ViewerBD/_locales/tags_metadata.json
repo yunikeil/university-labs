@@ -1,0 +1,34 @@
+[
+    {
+        "name": "Root",
+        "description": "Responsible for working with the all tables"
+    },
+    {
+        "name": "Api",
+        "description": "Responsible for working with the api table"
+    },
+    {
+        "name": "Contact",
+        "description": "Responsible for working with the contact table"
+    },
+    {
+        "name": "License",
+        "description": "Responsible for working with the license table"
+    },
+    {
+        "name": "Schema",
+        "description": "Responsible for working with the schema table"
+    },
+    {
+        "name": "Endpoint",
+        "description": "Responsible for working with the endpoint table"
+    },
+    {
+        "name": "Parameter",
+        "description": "Responsible for working with the parameter table"
+    },
+    {
+        "name": "Response",
+        "description": "Responsible for working with the response table"
+    }
+]
